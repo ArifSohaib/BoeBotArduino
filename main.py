@@ -3,7 +3,8 @@ from pygame import sysfont
 import pyfirmata
 import time
 import numpy as np 
-
+import os
+import sys
 white = (255, 255, 255)
 green = (0, 255, 0)
 blue = (0, 0, 128)
@@ -22,7 +23,10 @@ def get_speed(y_pos: float) -> int:
         speed = int(np.interp(y_pos, [100,299], [min_speed,max_speed]))
     return speed 
 
-board = pyfirmata.Arduino('COM3')
+if os.name == 'nt':
+    board = pyfirmata.Arduino("COM9")
+else:
+    board = pyfirmata.Arduino("/dev/ttyACM0")
 # servo_pin = board.get_pin('d:8:s') # Change the pin number to match your setup
 servo_pin1 = board.get_pin('d:9:s')
 servo_pin2 = board.get_pin('d:8:s')
@@ -31,15 +35,27 @@ pygame.init()
 
 # Set up the Pygame window
 screen = pygame.display.set_mode((screen_X, screen_Y))
-pygame.display.set_caption("PS4 Controller")
-
+pygame.display.set_caption("Boe Bot with Wireless Controller")
+supported_controllers = ["Sony Interactive Entertainment Wireless Controller",
+                            "Xbox One S Controller", 
+                            "Wireless Controller",
+                            "Sony Computer Entertainment Wireless Controller"]
 # Set up the PS4 controller
 joystick = None
 for i in range(pygame.joystick.get_count()):
-    if pygame.joystick.Joystick(i).get_name() == "PS4 Controller":
+    controller_name = pygame.joystick.Joystick(i).get_name()
+    if controller_name in supported_controllers:
         joystick = pygame.joystick.Joystick(i)
         joystick.init()
         print("PS4 controller connected.")
+    else:
+        print(f"found {pygame.joystick.Joystick(i).get_name()}")
+if joystick == None:
+    print(f"found {pygame.joystick.get_count()} controllers")
+    print(f"Did not find controller, quitting")
+    
+    pygame.quit()
+    sys.exit(0)
 
 # Set the initial position and speed of the servo
 
